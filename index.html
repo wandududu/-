@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>메이플랜드 보스 타이머</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .boss-card {
+            background: linear-gradient(145deg, #1e1e24, #18181c);
+            border: 1px solid #2d2d38;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 max-w-md mx-auto">
+
+    <!-- Header Section -->
+    <header class="w-full mb-5 text-center pt-2">
+        <div class="inline-flex items-center space-x-2 mb-1">
+            <i class="fa-solid fa-dragon text-2xl text-amber-500"></i>
+            <h1 class="text-2xl font-black text-white tracking-tight">
+                메이플랜드 <span class="text-amber-500">보스 타이머</span>
+            </h1>
+        </div>
+        <p class="text-gray-400 text-xs">
+            보스 격파 시 버튼을 눌러 리스폰 및 입장 가능 시간을 추적하세요.
+        </p>
+    </header>
+
+    <!-- Main Content Area (Boss Cards List) -->
+    <main class="w-full flex-grow space-y-4" id="bossContainer">
+        <!-- Boss cards rendered dynamically -->
+    </main>
+
+    <!-- Modal for Manual Time Entry -->
+    <div id="manualModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 w-full max-w-xs space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="text-base font-bold text-amber-400" id="modalTitle">과거 시간 입력</h3>
+                <button onclick="closeManualModal()" class="text-zinc-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-zinc-400">격파한 날짜와 시각을 선택하세요.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">격파 날짜 및 시간</label>
+                    <input type="datetime-local" id="manualDateTimeInput" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="confirmManualTime()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-2.5 rounded-xl text-xs transition">
+                    확인 및 저장
+                </button>
+                <button onclick="closeManualModal()" class="w-20 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2.5 rounded-xl text-xs transition">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="w-full text-center mt-8 py-4 text-xs text-zinc-600 border-t border-zinc-800">
+        <p class="font-medium text-zinc-500">by완둑콩</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // 순서 및 주기 설정
+        const BOSS_DATA = [
+            {
+                id: 'papulatus',
+                name: '파풀라투스',
+                respawnHours: 24,
+                label: '24시간',
+                icon: 'fa-clock',
+                color: 'from-amber-500 to-orange-700'
+            },
+            {
+                id: 'pianus',
+                name: '피아누스',
+                respawnHours: 7 * 24, // 168시간
+                label: '7일',
+                icon: 'fa-fish-fins',
+                color: 'from-blue-600 to-indigo-800'
+            },
+            {
+                id: 'crimsonwood',
+                name: '크림슨우드',
+                respawnHours: 7 * 24, // 168시간
+                label: '7일',
+                icon: 'fa-tree',
+                color: 'from-red-600 to-rose-900'
+            },
+            {
+                id: 'spookyworld',
+                name: '스푸키월드',
+                respawnHours: 7 * 24, // 168시간
+                label: '7일',
+                icon: 'fa-ghost',
+                color: 'from-purple-600 to-slate-900'
+            }
+        ];
+
+        let savedTimers = JSON.parse(localStorage.getItem('mapleland_boss_timers_v3')) || {};
+        let activeBossForManual = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderBossCards();
+            startGlobalTimer();
+        });
+
+        function renderBossCards() {
+            const container = document.getElementById('bossContainer');
+            container.innerHTML = '';
+
+            BOSS_DATA.forEach(boss => {
+                const timerData = savedTimers[boss.id];
+                const card = document.createElement('div');
+                card.className = 'boss-card rounded-2xl p-4 flex flex-col justify-between';
+
+                let statusContent = '';
+
+                if (timerData) {
+                    const defeatedDate = new Date(timerData.defeatedAt);
+                    const respawnDate = new Date(timerData.respawnAt);
+
+                    statusContent = `
+                        <div class="bg-zinc-900/90 rounded-xl p-3 my-3 border border-zinc-800 text-xs space-y-1">
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span><i class="fa-regular fa-calendar-check text-emerald-400 mr-1"></i> 격파 시각</span>
+                                <span class="text-gray-200 font-medium">${formatDate(defeatedDate)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span><i class="fa-solid fa-bullhorn text-amber-400 mr-1"></i> 입장 가능</span>
+                                <span class="text-amber-400 font-bold">${formatDate(respawnDate)}</span>
+                            </div>
+                            <div class="pt-2 text-center border-t border-zinc-800 mt-2">
+                                <div id="timer-display-${boss.id}" class="text-lg font-black text-amber-400 py-1">
+                                    계산 중...
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex space-x-2">
+                                <button onclick="recordNow('${boss.id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-2.5 rounded-xl text-xs transition active:scale-95 shadow">
+                                    <i class="fa-solid fa-crosshairs mr-1"></i> ⚔️ 지금 격파 완료
+                                </button>
+                                <button onclick="resetTimer('${boss.id}')" class="w-20 bg-zinc-800 hover:bg-zinc-700 text-gray-400 border border-zinc-700 text-xs font-bold py-2.5 rounded-xl transition active:scale-95">
+                                    초기화
+                                </button>
+                            </div>
+                            <button onclick="openManualModal('${boss.id}')" class="w-full bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-medium py-2 rounded-xl transition">
+                                <i class="fa-regular fa-clock mr-1 text-amber-400"></i> 🕒 과거 시간 입력
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    statusContent = `
+                        <div class="my-3 space-y-2">
+                            <div class="text-center text-xs text-zinc-500 py-1">대기 중 (기록 없음)</div>
+                            <button onclick="recordNow('${boss.id}')" class="w-full bg-gradient-to-r ${boss.color} hover:brightness-110 text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-crosshairs"></i>
+                                <span>⚔️ 지금 격파 완료</span>
+                            </button>
+                            <button onclick="openManualModal('${boss.id}')" class="w-full bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-medium py-2 rounded-xl transition">
+                                <i class="fa-regular fa-clock mr-1 text-amber-400"></i> 🕒 과거 시간 입력
+                            </button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${boss.color} flex items-center justify-center text-white text-base shadow-sm">
+                                    <i class="fa-solid ${boss.icon}"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-bold text-white">${boss.name}</h2>
+                                    <p class="text-xs text-zinc-400">${boss.label} 뒤 입장가능</p>
+                                </div>
+                            </div>
+                            <span class="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-amber-400 font-semibold border border-zinc-700">
+                                ${boss.label}
+                            </span>
+                        </div>
+                        ${statusContent}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            updateAllDisplays();
+        }
+
+        function recordNow(bossId) {
+            const boss = BOSS_DATA.find(b => b.id === bossId);
+            if (!boss) return;
+
+            const now = new Date();
+            saveBossTimer(bossId, now, boss.respawnHours);
+        }
+
+        function openManualModal(bossId) {
+            const boss = BOSS_DATA.find(b => b.id === bossId);
+            if (!boss) return;
+
+            activeBossForManual = bossId;
+            document.getElementById('modalTitle').innerText = `${boss.name} - 시간 입력`;
+            
+            // 현재 시간을 기본값으로 설정
+            const now = new Date();
+            const tzOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 16);
+            document.getElementById('manualDateTimeInput').value = localISOTime;
+
+            document.getElementById('manualModal').classList.remove('hidden');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manualModal').classList.add('hidden');
+            activeBossForManual = null;
+        }
+
+        function confirmManualTime() {
+            if (!activeBossForManual) return;
+
+            const inputValue = document.getElementById('manualDateTimeInput').value;
+            if (!inputValue) {
+                alert('날짜와 시간을 선택해 주세요.');
+                return;
+            }
+
+            const selectedDate = new Date(inputValue);
+            const boss = BOSS_DATA.find(b => b.id === activeBossForManual);
+
+            if (boss) {
+                saveBossTimer(activeBossForManual, selectedDate, boss.respawnHours);
+            }
+
+            closeManualModal();
+        }
+
+        function saveBossTimer(bossId, defeatedDate, respawnHours) {
+            const respawnTimeMs = defeatedDate.getTime() + (respawnHours * 60 * 60 * 1000);
+            const respawnDate = new Date(respawnTimeMs);
+
+            savedTimers[bossId] = {
+                defeatedAt: defeatedDate.toISOString(),
+                respawnAt: respawnDate.toISOString()
+            };
+
+            localStorage.setItem('mapleland_boss_timers_v3', JSON.stringify(savedTimers));
+            renderBossCards();
+        }
+
+        function resetTimer(bossId) {
+            delete savedTimers[bossId];
+            localStorage.setItem('mapleland_boss_timers_v3', JSON.stringify(savedTimers));
+            renderBossCards();
+        }
+
+        function startGlobalTimer() {
+            setInterval(() => {
+                updateAllDisplays();
+            }, 1000);
+        }
+
+        function updateAllDisplays() {
+            const now = new Date().getTime();
+
+            BOSS_DATA.forEach(boss => {
+                const displayEl = document.getElementById(`timer-display-${boss.id}`);
+                if (!displayEl) return;
+
+                const timerData = savedTimers[boss.id];
+                if (!timerData) return;
+
+                const targetTime = new Date(timerData.respawnAt).getTime();
+                const distance = targetTime - now;
+
+                if (distance <= 0) {
+                    displayEl.innerHTML = `<span class="text-emerald-400 animate-pulse-slow"><i class="fa-solid fa-circle-check mr-1"></i> 🚨 입장 가능합니다!</span>`;
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    let timeString = '';
+                    if (days > 0) timeString += `${days}일 `;
+                    timeString += `${String(hours).padStart(2, '0')}시간 `;
+                    timeString += `${String(minutes).padStart(2, '0')}분 `;
+                    timeString += `${String(seconds).padStart(2, '0')}초 남음`;
+
+                    displayEl.innerHTML = `<i class="fa-solid fa-hourglass-half text-amber-500 mr-1 text-xs"></i> ${timeString}`;
+                }
+            });
+        }
+
+        function formatDate(date) {
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            
+            let hours = date.getHours();
+            const ampm = hours >= 12 ? '오후' : '오전';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${mm}/${dd} ${ampm} ${hours}:${minutes}`;
+        }
+    </script>
+</body>
+</html>
+```
