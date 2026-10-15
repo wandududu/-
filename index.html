@@ -28,15 +28,6 @@
             font-size: 20px;
             color: #ffb74d;
             margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .header-logo {
-            height: 32px;
-            width: auto;
-            object-fit: contain;
         }
         .subtitle {
             font-size: 12px;
@@ -75,4 +66,110 @@
         .btn-nick {
             background: #262626;
             color: #bbb;
-            border: 1px solid #3
+            border: 1px solid #3a3a3a;
+            padding: 5px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .boss-card {
+            background: #1e1e1e;
+            border: 1px solid #2d2d2d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .boss-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .boss-name {
+            font-size: 17px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .boss-cycle {
+            font-size: 11px;
+            background: #2a2a2a;
+            color: #ffb74d;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .time-info {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            background: #161616;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .time-value {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .timer-display {
+            font-size: 17px;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: #181818;
+            border: 1px solid #282828;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            color: #4caf50;
+        }
+        .timer-display.ready {
+            color: #ff5252;
+            background: #2a1515;
+            border-color: #5c2323;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+        button:active {
+            opacity: 0.8;
+        }
+        .btn-primary {
+            background: #ff9800;
+            color: #121212;
+        }
+        .btn-manual {
+            background: #37474f;
+            color: #eceff1;
+        }
+        .btn-reset {
+            background: #262626;
+            color: #888;
+            margin-top: 2px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-bottom: 20px;
+            font-size: 11px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>메이플랜드 보스 타이머</h1>
+        <div class="subtitle">보스 격파 시 버튼을 눌러 입장 가능 시간을
