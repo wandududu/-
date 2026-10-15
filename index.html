@@ -13,7 +13,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #121212;
-            color: #e0e0e0;
+            color: #f5f5f5;
             padding: 20px 15px;
             max-width: 480px;
             margin: 0 auto;
@@ -22,16 +22,17 @@
             text-align: center;
             margin-bottom: 15px;
             padding-bottom: 12px;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid #333;
         }
         h1 {
-            font-size: 20px;
+            font-size: 21px;
             color: #ffb74d;
             margin-bottom: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            font-weight: 700;
         }
         .header-logo {
             height: 28px;
@@ -39,7 +40,7 @@
         }
         .subtitle {
             font-size: 12px;
-            color: #888;
+            color: #aaa;
         }
         .char-tabs {
             display: flex;
@@ -50,9 +51,9 @@
             flex: 1;
             padding: 10px 4px;
             background: #1e1e1e;
-            border: 1px solid #333;
+            border: 1px solid #444;
             border-radius: 8px;
-            color: #aaa;
+            color: #ccc;
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
@@ -65,28 +66,29 @@
         .char-tab.active {
             background: #ff9800;
             color: #121212;
-            border-color: #ff9800;
+            border-color: #ffb74d;
         }
         .nick-edit-box {
             margin-bottom: 20px;
             text-align: right;
         }
         .btn-nick {
-            background: #262626;
-            color: #bbb;
-            border: 1px solid #3a3a3a;
+            background: #2a2a2a;
+            color: #ddd;
+            border: 1px solid #555;
             padding: 5px 10px;
             font-size: 11px;
             border-radius: 6px;
             cursor: pointer;
+            font-weight: 500;
         }
         .boss-card {
-            background: #1e1e1e;
-            border: 1px solid #2d2d2d;
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
         .boss-header {
             display: flex;
@@ -112,40 +114,42 @@
         }
         .boss-cycle {
             font-size: 11px;
-            background: #2a2a2a;
+            background: #2c2c2c;
             color: #ffb74d;
+            border: 1px solid #444;
             padding: 3px 8px;
             border-radius: 10px;
-            font-weight: 500;
+            font-weight: 600;
         }
         .time-info {
             font-size: 12px;
-            color: #999;
+            color: #bbb;
             margin-bottom: 10px;
             line-height: 1.5;
-            background: #161616;
+            background: #141414;
+            border: 1px solid #282828;
             padding: 8px 12px;
             border-radius: 6px;
         }
         .time-value {
             color: #ffffff;
-            font-weight: 600;
+            font-weight: 700;
         }
         .timer-display {
             font-size: 17px;
             font-weight: bold;
             text-align: center;
             padding: 10px;
-            background: #181818;
-            border: 1px solid #282828;
+            background: #141414;
+            border: 1px solid #333;
             border-radius: 8px;
             margin-bottom: 12px;
-            color: #4caf50;
+            color: #66bb6a;
         }
         .timer-display.ready {
             color: #ff5252;
             background: #2a1515;
-            border-color: #5c2323;
+            border-color: #6b2626;
         }
         .btn-group {
             display: flex;
@@ -170,12 +174,13 @@
             color: #121212;
         }
         .btn-manual {
-            background: #37474f;
-            color: #eceff1;
+            background: #455a64;
+            color: #ffffff;
         }
         .btn-reset {
-            background: #262626;
-            color: #888;
+            background: #2a2a2a;
+            color: #aaa;
+            border: 1px solid #444;
             margin-top: 2px;
         }
         footer {
@@ -183,7 +188,7 @@
             margin-top: 30px;
             padding-bottom: 20px;
             font-size: 11px;
-            color: #555;
+            color: #777;
         }
     </style>
 </head>
@@ -212,10 +217,10 @@
 
     <script>
         const bosses = [
-            { id: 'papulatus', name: '파풀라투스', hours: 24, label: '24시간', iconId: 'icon-papu' },
+            { id: 'papulatus', name: '파풀라투스 ⏰', hours: 24, label: '24시간', iconId: 'icon-papu' },
             { id: 'pianus', name: '피아누스', hours: 168, label: '7일', iconId: 'icon-pianus' },
-            { id: 'crimsonwood', name: '크림슨우드', hours: 168, label: '7일', iconId: 'icon-crimson' },
-            { id: 'spookyworld', name: '스푸키월드', hours: 168, label: '7일', iconId: 'icon-spooky' }
+            { id: 'crimsonwood', name: '크림슨우드 🌲', hours: 168, label: '7일', iconId: 'icon-crimson' },
+            { id: 'spookyworld', name: '스푸키월드 🧸', hours: 168, label: '7일', iconId: 'icon-spooky' }
         ];
 
         let currentChar = 'char1';
