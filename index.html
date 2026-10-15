@@ -137,7 +137,7 @@
             flex-direction: column;
             gap: 6px;
         }
-        button {
+        button, .btn-file-like {
             width: 100%;
             padding: 10px;
             border: none;
@@ -146,8 +146,11 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s, opacity 0.2s;
+            text-align: center;
+            display: block;
+            text-decoration: none;
         }
-        button:active {
+        button:active, .btn-file-like:active {
             opacity: 0.8;
         }
         .btn-primary {
@@ -163,6 +166,14 @@
             color: #aaa;
             border: 1px solid #444;
             margin-top: 2px;
+        }
+        /* 숨겨진 날짜/시간 input 스타일 */
+        .hidden-datetime {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
         }
         footer {
             text-align: center;
@@ -247,4 +258,124 @@
                         <span class="boss-cycle">주기: ${boss.label}</span>
                     </div>
                     <div class="time-info">
-                        격파 시
+                        격파 시각: <span id="${boss.id}-clear" class="time-value">-</span><br>
+                        입장 가능: <span id="${boss.id}-respawn" class="time-value">-</span>
+                    </div>
+                    <div id="${boss.id}-display" class="timer-display">대기 중</div>
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="setKilled('${boss.id}', ${boss.hours})">⚔️ 지금 격파 완료</button>
+                        <button class="btn-manual" onclick="triggerManualPicker('${boss.id}')">🕒 과거 시간 입력</button>
+                        <input type="datetime-local" id="${boss.id}-picker" class="hidden-datetime" onchange="handleManualPick('${boss.id}', ${boss.hours}, this)">
+                        <button class="btn-reset" onclick="resetTimer('${boss.id}')">초기화</button>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                const savedData = localStorage.getItem(`boss_${currentChar}_${boss.id}`);
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    startTimer(boss.id, data.clearTime, data.respawnTime);
+                }
+            });
+        }
+
+        function setKilled(bossId, hours) {
+            const now = new Date();
+            const respawnTime = new Date(now.getTime() + (hours * 60 * 60 * 1000));
+            saveAndStart(bossId, now.getTime(), respawnTime.getTime());
+        }
+
+        function triggerManualPicker(bossId) {
+            const picker = document.getElementById(`${bossId}-picker`);
+            if (!picker) return;
+
+            // 현재 시간을 기본값으로 세팅 후 달력 오픈
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            picker.value = now.toISOString().slice(0, 16);
+
+            if (typeof picker.showPicker === 'function') {
+                picker.showPicker();
+            } else {
+                picker.click();
+            }
+        }
+
+        function handleManualPick(bossId, hours, inputElem) {
+            const val = inputElem.value;
+            if (!val) return;
+
+            const clearDate = new Date(val);
+            if (isNaN(clearDate.getTime())) return;
+
+            const respawnTime = new Date(clearDate.getTime() + (hours * 60 * 60 * 1000));
+            saveAndStart(bossId, clearDate.getTime(), respawnTime.getTime());
+            inputElem.value = ''; // 선택 초기화
+        }
+
+        function saveAndStart(bossId, clearMs, respawnMs) {
+            const data = { clearTime: clearMs, respawnTime: respawnMs };
+            localStorage.setItem(`boss_${currentChar}_${bossId}`, JSON.stringify(data));
+            startTimer(bossId, clearMs, respawnMs);
+        }
+
+        function resetTimer(bossId) {
+            localStorage.removeItem(`boss_${currentChar}_${bossId}`);
+            if (timerIntervals[bossId]) clearInterval(timerIntervals[bossId]);
+            document.getElementById(`${bossId}-clear`).innerText = '-';
+            document.getElementById(`${bossId}-respawn`).innerText = '-';
+            const display = document.getElementById(`${bossId}-display`);
+            display.innerText = '대기 중';
+            display.className = 'timer-display';
+        }
+
+        function startTimer(bossId, clearTimeMs, respawnTimeMs) {
+            if (timerIntervals[bossId]) clearInterval(timerIntervals[bossId]);
+
+            const clearDate = new Date(clearTimeMs);
+            const respawnDate = new Date(respawnTimeMs);
+
+            document.getElementById(`${bossId}-clear`).innerText = formatDate(clearDate);
+            document.getElementById(`${bossId}-respawn`).innerText = formatDate(respawnDate);
+
+            function updateDisplay() {
+                const now = new Date().getTime();
+                const distance = respawnTimeMs - now;
+                const display = document.getElementById(`${bossId}-display`);
+                if (!display) return;
+
+                if (distance <= 0) {
+                    clearInterval(timerIntervals[bossId]);
+                    display.innerText = '🚨 입장 가능합니다!';
+                    display.className = 'timer-display ready';
+                    return;
+                }
+
+                display.className = 'timer-display';
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                let text = '';
+                if (days > 0) text += `${days}일 `;
+                text += `${hours}시간 ${minutes}분 ${seconds}초 남음`;
+                display.innerText = text;
+            }
+
+            updateDisplay();
+            timerIntervals[bossId] = setInterval(updateDisplay, 1000);
+        }
+
+        function formatDate(date) {
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const h = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            return `${m}/${d} ${h}:${min}`;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
