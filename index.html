@@ -28,15 +28,7 @@
             font-size: 21px;
             color: #ffb74d;
             margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
             font-weight: 700;
-        }
-        .header-logo {
-            height: 28px;
-            object-fit: contain;
         }
         .subtitle {
             font-size: 12px;
@@ -95,17 +87,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
-        }
-        .boss-title {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .boss-icon {
-            height: 26px;
-            width: auto;
-            max-width: 32px;
-            object-fit: contain;
         }
         .boss-name {
             font-size: 17px;
@@ -195,10 +176,7 @@
 <body>
 
     <header>
-        <h1>
-            <canvas id="logo-canvas" class="header-logo"></canvas>
-            메이플랜드 보스 타이머
-        </h1>
+        <h1>🍁 메이플랜드 보스 타이머 🍁</h1>
         <div class="subtitle">보스 격파 시 버튼을 눌러 입장 가능 시간을 확인하세요</div>
     </header>
 
@@ -217,10 +195,10 @@
 
     <script>
         const bosses = [
-            { id: 'papulatus', name: '파풀라투스 ⏰', hours: 24, label: '24시간', iconId: 'icon-papu' },
-            { id: 'pianus', name: '피아누스', hours: 168, label: '7일', iconId: 'icon-pianus' },
-            { id: 'crimsonwood', name: '크림슨우드 🌲', hours: 168, label: '7일', iconId: 'icon-crimson' },
-            { id: 'spookyworld', name: '스푸키월드 🧸', hours: 168, label: '7일', iconId: 'icon-spooky' }
+            { id: 'papulatus', name: '파풀라투스 ⏰', hours: 24, label: '24시간' },
+            { id: 'pianus', name: '피아누스 🐟', hours: 168, label: '7일' },
+            { id: 'crimsonwood', name: '크림슨우드 🌲', hours: 168, label: '7일' },
+            { id: 'spookyworld', name: '스푸키월드 🧸', hours: 168, label: '7일' }
         ];
 
         let currentChar = 'char1';
@@ -265,157 +243,8 @@
                 card.className = 'boss-card';
                 card.innerHTML = `
                     <div class="boss-header">
-                        <div class="boss-title">
-                            <span class="boss-name">${boss.name}</span>
-                            <canvas id="${boss.iconId}" class="boss-icon"></canvas>
-                        </div>
+                        <span class="boss-name">${boss.name}</span>
                         <span class="boss-cycle">주기: ${boss.label}</span>
                     </div>
                     <div class="time-info">
-                        격파 시각: <span id="${boss.id}-clear" class="time-value">-</span><br>
-                        입장 가능: <span id="${boss.id}-respawn" class="time-value">-</span>
-                    </div>
-                    <div id="${boss.id}-display" class="timer-display">대기 중</div>
-                    <div class="btn-group">
-                        <button class="btn-primary" onclick="setKilled('${boss.id}', ${boss.hours})">⚔️ 지금 격파 완료</button>
-                        <button class="btn-manual" onclick="setManualKilled('${boss.id}', ${boss.hours})">🕒 과거 시간 입력</button>
-                        <button class="btn-reset" onclick="resetTimer('${boss.id}')">초기화</button>
-                    </div>
-                `;
-                container.appendChild(card);
-
-                const savedData = localStorage.getItem(`boss_${currentChar}_${boss.id}`);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    startTimer(boss.id, data.clearTime, data.respawnTime);
-                }
-            });
-
-            renderCanvasIcons();
-        }
-
-        function renderCanvasIcons() {
-            const imgUrls = {
-                'logo-canvas': 'https://upload.wikimedia.org/wikipedia/commons/d/df/MapleStory_logo.svg',
-                'icon-papu': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Circle-icons-clock.svg/120px-Circle-icons-clock.svg.png',
-                'icon-pianus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Android_Emoji_1f41f.svg/120px-Android_Emoji_1f41f.svg.png',
-                'icon-crimson': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Emoji_u1f332.svg/120px-Emoji_u1f332.svg.png',
-                'icon-spooky': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Emoji_u1f9e8.svg/120px-Emoji_u1f9e8.svg.png'
-            };
-
-            Object.keys(imgUrls).forEach(canvasId => {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = imgUrls[canvasId];
-            });
-        }
-
-        function setKilled(bossId, hours) {
-            const now = new Date();
-            const respawnTime = new Date(now.getTime() + (hours * 60 * 60 * 1000));
-            saveAndStart(bossId, now.getTime(), respawnTime.getTime());
-        }
-
-        function setManualKilled(bossId, hours) {
-            const input = prompt("잡은 시각을 입력하세요\n예시 1: 14:30 (오늘 시각)\n예시 2: 2026-10-15 14:30 (날짜 포함)");
-            if (!input) return;
-
-            let clearDate = new Date();
-            const trimmed = input.trim();
-
-            if (trimmed.includes('-')) {
-                clearDate = new Date(trimmed.replace(' ', 'T'));
-            } else if (trimmed.includes(':')) {
-                const [h, m] = trimmed.split(':');
-                clearDate.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
-                if (clearDate > new Date()) {
-                    clearDate.setDate(clearDate.getDate() - 1);
-                }
-            } else {
-                alert("시간 형식이 올바르지 않습니다. (예: 14:30)");
-                return;
-            }
-
-            if (isNaN(clearDate.getTime())) {
-                alert("올바른 날짜/시간을 입력해 주세요.");
-                return;
-            }
-
-            const respawnTime = new Date(clearDate.getTime() + (hours * 60 * 60 * 1000));
-            saveAndStart(bossId, clearDate.getTime(), respawnTime.getTime());
-        }
-
-        function saveAndStart(bossId, clearMs, respawnMs) {
-            const data = { clearTime: clearMs, respawnTime: respawnMs };
-            localStorage.setItem(`boss_${currentChar}_${bossId}`, JSON.stringify(data));
-            startTimer(bossId, clearMs, respawnMs);
-        }
-
-        function resetTimer(bossId) {
-            localStorage.removeItem(`boss_${currentChar}_${bossId}`);
-            if (timerIntervals[bossId]) clearInterval(timerIntervals[bossId]);
-            document.getElementById(`${bossId}-clear`).innerText = '-';
-            document.getElementById(`${bossId}-respawn`).innerText = '-';
-            const display = document.getElementById(`${bossId}-display`);
-            display.innerText = '대기 중';
-            display.className = 'timer-display';
-        }
-
-        function startTimer(bossId, clearTimeMs, respawnTimeMs) {
-            if (timerIntervals[bossId]) clearInterval(timerIntervals[bossId]);
-
-            const clearDate = new Date(clearTimeMs);
-            const respawnDate = new Date(respawnTimeMs);
-
-            document.getElementById(`${bossId}-clear`).innerText = formatDate(clearDate);
-            document.getElementById(`${bossId}-respawn`).innerText = formatDate(respawnDate);
-
-            function updateDisplay() {
-                const now = new Date().getTime();
-                const distance = respawnTimeMs - now;
-                const display = document.getElementById(`${bossId}-display`);
-                if (!display) return;
-
-                if (distance <= 0) {
-                    clearInterval(timerIntervals[bossId]);
-                    display.innerText = '🚨 입장 가능합니다!';
-                    display.className = 'timer-display ready';
-                    return;
-                }
-
-                display.className = 'timer-display';
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                let text = '';
-                if (days > 0) text += `${days}일 `;
-                text += `${hours}시간 ${minutes}분 ${seconds}초 남음`;
-                display.innerText = text;
-            }
-
-            updateDisplay();
-            timerIntervals[bossId] = setInterval(updateDisplay, 1000);
-        }
-
-        function formatDate(date) {
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            const h = String(date.getHours()).padStart(2, '0');
-            const min = String(date.getMinutes()).padStart(2, '0');
-            return `${m}/${d} ${h}:${min}`;
-        }
-
-        window.onload = init;
-    </script>
-</body>
-</html>
+                        격파 시
